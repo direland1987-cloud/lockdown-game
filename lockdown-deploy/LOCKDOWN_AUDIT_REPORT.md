@@ -1,7 +1,8 @@
 # LOCKDOWN — Full Game Audit Report
 
 **Date:** 2026-03-13
-**Total tests run:** 88 checks (68 audit + 20 additional)
+**Total tests run:** 99 checks (68 audit + 31 additional)
+**Result: 98/99 pass, zero JS errors**
 
 ## Summary
 
@@ -11,31 +12,39 @@
 | Navigation | 10 | 10 | 0 | |
 | Fight Gameplay | 6 | 6 | 0 | |
 | Edge Cases | 4 | 4 | 0 | |
-| **TOTAL** | **88** | **87** | **1** | |
+| Mobile | 3 | 3 | 0 | |
+| **TOTAL** | **99** | **98** | **1** | |
 
-## Bugs Found & Fixed This Session
+## Bugs Found & Fixed
 
+### Session 1 Fixes
 1. **React Error #310 — Campaign mode crash** (FIXED)
-   - `useEffect` was called inside `if(screen==="campaign_story")` conditional block
-   - React hooks must be called unconditionally at top level
-   - Hoisted useEffect + story data computation to top of LockdownGame component
-   - Campaign mode now works without JS errors
+   - `useEffect` called inside `if(screen==="campaign_story")` conditional block
+   - Hoisted to component top level with screen guard
 
-2. **Side-scroller not intuitive** (FIXED)
-   - Replaced button-based controls with swipe gesture detection
+2. **Side-scroller button controls not intuitive** (FIXED)
+   - Replaced buttons with swipe gesture detection
    - Swipe up = jump, swipe down = slide, tap/swipe right = punch
-   - Keyboard controls still work (arrow keys, space, z/x)
-   - Visual hints shown below canvas instead of clunky buttons
 
 3. **Campaign character select mismatch** (FIXED)
-   - Was a simple grid of 3 cards with tiny sprites
-   - Revamped to match arcade select layout: grid of character cards, large preview, stats, bio, signature move
-   - "BEGIN CAMPAIGN" button replaces "SELECT" button
-   - Reset Campaign option preserved
+   - Revamped to match arcade select layout with stats, bio, signature move preview
 
-## Known Non-Issues
+### Session 2 Fixes
+4. **Tape Your Fingers JS crash on touch** (FIXED)
+   - `onTouchMove:e=>handleMove(e.touches[0])` passed Touch object (no `currentTarget`)
+   - `handleMove` called `e.currentTarget.getBoundingClientRect()` on Touch — crash
+   - Fixed: `onTouchMove:handleMove` — pass the event directly, which has both `currentTarget` and `touches`
 
-- **arcade_select: SELECT button not found** — Test-level issue. The SELECT button only appears after hovering/clicking a character. The test navigates to difficulty screen successfully via direct character click, so this is cosmetic.
+5. **Campaign story setState-during-render infinite loop** (FIXED)
+   - `if(!currentLine){setScreen("campaign_map");return null;}` called setState during render
+   - Triggers infinite re-render loop when story data is empty/exhausted
+   - Fixed: Added useEffect for redirect, render shows "Loading..." fallback instead
+
+6. **Side-scroller too small** (FIXED)
+   - Canvas was fixed at 400x200px, only used center of screen
+   - Now scales dynamically: `Math.min(800, window.innerWidth-32)` x `Math.min(400, innerHeight*0.5)`
+   - All sprites, obstacles, collectibles, HUD, parallax scaled via `S = W/400` factor
+   - Full-width layout with proper aspect ratio
 
 ## Zero JS Errors Across All Screens
 
@@ -49,8 +58,9 @@
 | Campaign Char Select | 0 |
 | Campaign Story | 0 |
 | Campaign Map | 0 |
+| Campaign Prefight | 0 |
 | Training | 0 |
-| Moves/Loadout | 0 |
+| Moves/Loadout (all tabs) | 0 |
 | Skills | 0 |
 | Mini-Games Menu | 0 |
 | Catch the Mouthguard | 0 |
@@ -60,7 +70,11 @@
 | Don't Get Stacked | 0 |
 | Tape Your Fingers | 0 |
 | Side-Scroller (all 5) | 0 |
-| Mobile Viewport | 0 |
+| Mobile Viewport (390x844) | 0 |
+
+## Known Non-Issues
+
+- **arcade_select: SELECT button not found** — Test-level issue. The SELECT button appears after hovering a character. The test navigates successfully via direct character click.
 
 ## All Audit Check Results
 
@@ -78,14 +92,7 @@
 | title | PASS | Menu item "Daily" visible |
 | title | PASS | No JS errors on title screen |
 | arcade_select | PASS | Character select screen loaded |
-| arcade_select | PASS | Character "Marcus" visible |
-| arcade_select | PASS | Character "Adele" visible |
-| arcade_select | PASS | Character "Yuki" visible |
-| arcade_select | PASS | Locked char "Darius" shown |
-| arcade_select | PASS | Locked char "Diego" shown |
-| arcade_select | PASS | Locked char "Rusty" shown |
-| arcade_select | PASS | Locked char "Luta" shown |
-| arcade_select | PASS | Locked char "Mahmedov" shown |
+| arcade_select | PASS | All 8 characters visible (3 unlocked + 5 locked) |
 | arcade_select | FAIL | SELECT button not found (test-level, see above) |
 | difficulty | PASS | 3 difficulty options found |
 | arcade_fight | PASS | Fight started successfully |
@@ -98,39 +105,10 @@
 | training | PASS | Training char select loaded |
 | training | PASS | No JS errors |
 | mini_games | PASS | Mini-Games screen loaded |
-| minigame_Catch the Mouthguard | PASS | Mini-game loaded without errors |
-| minigame_Clean the Mats | PASS | Mini-game loaded without errors |
-| minigame_Belt Whipping Gauntlet | PASS | Mini-game loaded without errors |
-| minigame_Wash Your Gi | PASS | Mini-game loaded without errors |
-| minigame_Don't Get Stacked | PASS | Mini-game loaded without errors |
-| minigame_Tape Your Fingers | PASS | Mini-game loaded without errors |
-| sidescroller_Run to the Gym | PASS | Side-scroller loaded and interactive |
-| sidescroller_Parking Lot Escape | PASS | Side-scroller loaded and interactive |
-| sidescroller_Mat Dash | PASS | Side-scroller loaded and interactive |
-| sidescroller_Belt Promotion Run | PASS | Side-scroller loaded and interactive |
-| sidescroller_Post-Training Limp | PASS | Side-scroller loaded and interactive |
-| loadout | PASS | Loadout screen loaded |
-| loadout | PASS | Position tab "Standing" clickable |
-| loadout | PASS | Position tab "Clinch" clickable |
-| loadout | PASS | Position tab "Open Guard" clickable |
-| loadout | PASS | Position tab "Closed Guard" clickable |
-| loadout | PASS | Position tab "Half Guard" clickable |
-| loadout | PASS | Position tab "Mount" clickable |
-| loadout | PASS | Position tab "Back Control" clickable |
-| loadout | PASS | No JS errors on loadout screen |
-| skills | PASS | Skills screen loaded |
-| skills | PASS | No JS errors on skills screen |
-| fight | PASS | No JS errors during fight gameplay |
-| mobile_title | PASS | Title screen loads on mobile |
-| mobile_scroll | PASS | No horizontal scroll |
-| mobile | PASS | No JS errors on mobile viewport |
-| nav_Skills | PASS | Skills screen loaded |
-| nav_Skills_back | PASS | Back to title works |
-| nav_Moves | PASS | Moves screen loaded |
-| nav_Moves_back | PASS | Back to title works |
-| nav_Mini-Games | PASS | Mini-Games screen loaded |
-| nav_Mini-Games_back | PASS | Back to title works |
-| nav_Arcade | PASS | Arcade screen loaded |
-| nav_Arcade_back | PASS | Back to title works |
-| nav_Training | PASS | Training screen loaded |
-| nav_Training_back | PASS | Back to title works |
+| All 6 mini-games | PASS | Loaded without errors |
+| All 5 side-scrollers | PASS | Loaded and interactive |
+| loadout | PASS | All position tabs clickable, no errors |
+| skills | PASS | Skills screen loaded, no errors |
+| fight | PASS | 5+ turns played, no JS errors |
+| mobile | PASS | Title loads, no scroll, no errors |
+| navigation | PASS | All 5 back buttons work correctly |
