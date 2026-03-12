@@ -2,9 +2,100 @@
 
 ## Current Build
 **Location:** `lockdown-deploy/index.html`
-**Size:** ~1,057KB (single self-contained HTML file)
+**Version:** 2.0 (Phase 2)
+**Size:** ~1,100KB+ (single self-contained HTML file)
 **Dependencies:** React 18.2 (CDN), ReactDOM 18.2 (CDN), Tailwind CSS (CDN)
 **Audio:** 9 MP3 files in `lockdown-deploy/` (referenced relatively)
+
+---
+
+## Phase 2 — What Was Added
+
+### 1. Persistence & Foundation
+- **localStorage persistence** — Replaced in-memory store with localStorage (with Safari private browsing fallback)
+- **Version key** (`ld-version: "2.0"`) for future migration support
+- **Storage keys:** `ld-profile`, `ld-loadouts`, `ld-campaign`, `ld-daily`, `ld-streak`, `ld-record`, `ld-eggs`
+
+### 2. Stamina Overhaul
+- **Position-aware recovery:** +4 top, +2 bottom, +3 neutral (was flat +1.5)
+- **Danger zone:** <30 stamina = 1.5x move costs, harder minigames
+- **Recovery moves:** "Breathe" (selfHeal: 4-8) added to Standing, Guard, Half Guard, Side Control, Mount; "Reset" added to Clinch
+- **Visual upgrade:** Stamina bar h-5 with embedded number, pulse animation at <30, DANGER label, gradient on low stamina
+- **CSS animations:** staminaPulse, staminaFlash, stamina-danger, danger-vignette
+
+### 3. Minigame Simplification
+- **Sequence:** 2-3 arrows (was 4-7)
+- **PowerMeter:** Sweet spot widened from 60-82% to 45-78%
+- **TimingRing:** Shrink rate slowed from 2.0 to 1.3
+- **HoldRelease:** New minigame replacing RapidTap — hold button, release in green zone
+
+### 4. 4-Move Equip System
+- **DEFAULT_LOADOUTS** per character (marcus, adele, yuki) per position
+- **Loadout screen** (`screen === "loadout"`): Position tabs, equipped/available moves, tap to swap
+- **getMoves() filter:** When loadout exists, limits to 4 equipped moves per position
+
+### 5. XP & Leveling
+- **Profile state:** `{xp, upgrades}` in localStorage (`ld-profile`)
+- **XP awards:** On fight finish via `calcXpReward()` — win bonus, sub finish bonus, streak bonus
+- **Level calculation:** `getLevel(xp)` — sqrt-based curve
+- **Skill tree** (`screen === "skills"`): 4 paths (Stamina Pool, Recovery Rate, Move Power, Sub Defense), 5 levels each
+- **applyUpgrades():** Modifies fight calculations based on purchased upgrades
+
+### 6. Title Screen Overhaul
+- **7-item menu grid:** Campaign, Arcade, Training, Mini-Games, Moves, Skills, Daily
+- **Player stats display:** Level, wins, streak
+
+### 7. Campaign Mode
+- **8 goon characters** with procedural canvas sprites:
+  - goon_nephew, goon_trt_dad, goon_yoga_mum, goon_enforcer
+  - goon_triangle, goon_influencer, goon_mma_girl, goon_purple_belt
+- **6 chapters** (`CAMPAIGN_CHAPTERS`): Day One, The Grinders, Specialist Bracket, Open Mat Wars, Tournament Prep, The Black Belt Gauntlet
+- **Campaign flow:** Character select (locked for duration) → Chapter map → Pre-fight intro → Fight → Result → Side-scroller (between some fights) → Next fight
+- **Per-fight difficulty vectors:** `{acc, defMod}` objects instead of string keys
+- **Campaign state** in localStorage: `{heroId, chapter, fight, completed}`
+
+### 8. Training Mode
+- "Training" option from title menu → enters fight with easy AI, no records
+
+### 9. Side-Scroller Engine
+- **Canvas-based** `SideScroller` component with jump physics
+- **5 scenarios:** Run to the Gym, Parking Lot Escape, Mat Dash, Belt Promotion Run, Post-Training Limp
+- **Wired into campaign** between fights (every other fight triggers a side-scroller)
+- **Accessible from Mini-Games** menu for free play
+
+### 10. Comedy Mini-Games (6)
+- **CatchMouthguard** — Tap falling items, 3 lives
+- **CleanMats** — Click spots on mat, 80% threshold timer
+- **BeltWhipping** — Dodge left/right, rhythm-based
+- **WashGi** — Sort whites/colors conveyor
+- **DontGetStacked** — Balance tapping, progressive weight
+- **TapeFingers** — Circular trace finger wrap
+- **Mini-game select screen** with game picker + XP rewards on completion
+
+### 11. Daily Challenge Expansion
+- **32 challenges** (was 6) — rotating daily based on day-of-year
+- **Daily streak tracker** in localStorage (`ld-daily`)
+- **Milestone rewards:** 3/7/14/30/60-day streaks grant bonus XP
+- **Title screen** shows streak count
+
+### 12. SubmissionDisplay Component
+- **3-image composite:** Attacker face + technique gradient placeholder + defender face
+- **Type-aware gradients:** Choke (red), armbar (orange), leglock (green), default (purple)
+- **Shown during** `sub_minigame` phase
+
+### 13. Yuki Artwork Wiring
+- Yuki's face artwork keys (`artwork_yuki_attack_face`, `artwork_yuki_defense_face`) already exist in ARTWORK_DATA
+- Dynamic lookup `ARTWORK_DATA[artwork_${id}_attack_face]` handles Yuki automatically in cutscene + result screens
+
+### 14. Ad/IAP Stubs
+- **RewardedAd stub:** `isAvailable()` returns false, `show(callback)` calls back with `{rewarded: false}`
+- **IAP stub:** 3 products defined (Remove Ads, XP Boost, Unlock All Characters), `purchase()` returns `{success: false}`
+- **UI buttons** on result screen (2x XP, Stamina Boost) — hidden when `RewardedAd.isAvailable()` returns false
+
+### 15. iOS CSS Prep
+- **viewport-fit=cover** meta tag added
+- **Apple mobile web app** meta tags (capable, black-translucent status bar)
+- **Safe area CSS:** `.ld-body` uses `env(safe-area-inset-*)` padding
 
 ---
 
@@ -27,7 +118,7 @@
 | **Ashi Garami** | **2** | **NEW** |
 
 ### 2. Moves Overhaul
-- **Closed Guard top:** Removed all submissions (BJJ-correct — you can't submit from inside closed guard easily). Top now has: Open the Guard, Stack Pass, Stand Up in Guard, Posture & Pressure.
+- **Closed Guard top:** Removed all submissions (BJJ-correct). Top now has: Open the Guard, Stack Pass, Stand Up in Guard, Posture & Pressure.
 - **Closed Guard bottom:** Added Ashi Entry, Back Take. Kept Triangle, Armbar, sweeps, stand up.
 - **Open Guard:** Added Ashi Entry, Back Take, Bodylock Pass, Knee Cut for top.
 - **Butterfly Guard:** Added Ashi Entry for bottom.
@@ -61,6 +152,7 @@ Each character has positional affinities (0.7x to 1.3x multiplier) that affect:
 | yuki | Yuki "Spider" Tanaka | Technical Guard Player | HARD | No | Has procedural sprites |
 | darius | Darius "The Ghost" Okeke | Counter Fighter | MEDIUM | Yes | Has procedural sprites |
 | diego | "Loco" Diego Vega | Wild Card Scrambler | MEDIUM | Yes | Has procedural sprites |
+| **8 goons** | Campaign opponents | Various | Scaled | N/A | **Procedural canvas sprites** |
 
 ### 5. Final Artwork Integration
 **32 artwork sprites embedded** (base64 WebP, ~3.4MB total, all from `Final Artwork/Backgrounds Removed/`):
@@ -68,7 +160,7 @@ Each character has positional affinities (0.7x to 1.3x multiplier) that affect:
 - 2 turtle position sprites (Marcus top, Adele top) — embedded but Turtle position removed from game
 - 6 character face portraits (Marcus/Adele/Yuki attack + defense)
 - 3 full character portraits (Marcus, Adele, Yuki)
-- 4 submission artwork (Marcus/Adele sub attack + sub defend) — embedded, display system not yet built
+- 4 submission artwork (Marcus/Adele sub attack + sub defend) — embedded, SubmissionDisplay component built
 
 When Marcus fights Adele, the game shows the hand-drawn CPS2 pixel art instead of procedural sprites. The `getGrappleSprite()` function checks for artwork first.
 
@@ -83,9 +175,12 @@ When Marcus fights Adele, the game shows the hand-drawn CPS2 pixel art instead o
 - **Adele:** Still 0 real individual fighting sprites — portrait used as placeholder for all 24 poses
 - **Marcus/Yuki:** 8 individual fighting sprites each — still old origin (from `archived/`), no BG-removed replacements exist
 - **Grapple templates:** 25 embedded (old origin) + 1 missing (`grapple_turtle`) — no BG-removed replacements exist
-- **Yuki portrait + faces:** Now embedded in ARTWORK_DATA but not yet wired into game display code
-- **Submission artwork:** Marcus/Adele sub attack/defend now embedded but SubmissionDisplay component not built
+- **Yuki portrait + faces:** Now embedded and wired into game display code
+- **Submission artwork:** Marcus/Adele sub attack/defend embedded, SubmissionDisplay component built with placeholder technique shots
 - **Turtle position art:** Embedded but Turtle position removed from game code
+- **Goon sprites:** Procedural canvas-drawn (colored silhouettes) — need real artwork
+- **Side-scroller art:** CSS gradient backgrounds, colored rectangle obstacles — need real artwork
+- **Mini-game art:** Colored shapes with emoji labels — need real artwork
 
 ## Artwork Inventory
 
@@ -120,13 +215,13 @@ When Marcus fights Adele, the game shows the hand-drawn CPS2 pixel art instead o
 ### Technique Shots (per lockdown-submissions.md)
 | Submission | Status |
 |------------|:------:|
-| RNC Technique | Missing |
-| Guillotine Technique | Missing |
-| Armbar Technique | Missing |
-| Kimura Technique | Missing |
-| Leg Lock Technique | Missing |
-| Arm Triangle Technique | Missing |
-| Triangle Technique | Missing |
+| RNC Technique | Missing (CSS gradient placeholder) |
+| Guillotine Technique | Missing (CSS gradient placeholder) |
+| Armbar Technique | Missing (CSS gradient placeholder) |
+| Kimura Technique | Missing (CSS gradient placeholder) |
+| Leg Lock Technique | Missing (CSS gradient placeholder) |
+| Arm Triangle Technique | Missing (CSS gradient placeholder) |
+| Triangle Technique | Missing (CSS gradient placeholder) |
 
 ### Position Art — Other Pairs
 | Pair | Status |
@@ -143,10 +238,19 @@ Per `lockdown-submissions.md`, submissions use a **3-image composite**:
 2. **Defense Face** — character portrait (pain/strain expression)
 3. **Technique Shot** — close-up of the submission mechanic (no characters, just grips/body parts)
 
-Currently the game shows the procedural minigame UI. To add the artwork-based submission display, we need:
-- All 7 technique shots generated
-- All character face shots generated
-- A new `SubmissionDisplay` React component that composites the 3 images
+**Status:** SubmissionDisplay component is built and renders during `sub_minigame` phase. Uses CSS gradient placeholders with submission name text for technique shots until real artwork is provided.
+
+---
+
+## Game Modes
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| **Arcade** | Quick fight — pick character, difficulty, opponent | Complete |
+| **Campaign** | 6-chapter story mode with 8 goon opponents, progressive difficulty | Complete |
+| **Training** | Practice sandbox with easy AI, no records | Complete |
+| **Mini-Games** | 6 comedy mini-games + 5 side-scrollers | Complete |
+| **Daily Challenge** | 32 rotating challenges with streak rewards | Complete |
 
 ---
 
@@ -154,9 +258,10 @@ Currently the game shows the procedural minigame UI. To add the artwork-based su
 ```
 BJJ 16bit game/
 ├── lockdown-deploy/          # THE BUILD (deploy this)
-│   ├── index.html            # Main game (1,057KB, self-contained)
+│   ├── index.html            # Main game (~1,100KB, self-contained)
 │   ├── index_backup.html     # Pre-v5 backup
 │   └── *.mp3                 # 9 audio files
+├── Phase 2 Plan/             # Phase 2 design docs
 ├── Final Artwork/            # Source artwork (not deployed)
 │   ├── Accepted/Marcus Adele/  # 19 position PNGs
 │   ├── Accepted/Marcus Yuki/   # 4 WIP PNGs

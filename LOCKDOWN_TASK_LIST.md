@@ -4,7 +4,31 @@
 
 ---
 
-## IMMEDIATE
+## PHASE 2 — COMPLETE
+
+- [x] localStorage persistence (replace _memStore with localStorage + Safari fallback)
+- [x] Stamina overhaul (position-aware recovery, danger zone, recovery moves, visual upgrade)
+- [x] Minigame simplification (fewer arrows, wider sweet spots, HoldRelease replaces RapidTap)
+- [x] 4-move equip/forget system + default loadouts per character
+- [x] XP & leveling system + 4-path skill tree UI
+- [x] Title screen overhaul (7-item menu: Campaign/Arcade/Training/Mini-Games/Moves/Skills/Daily)
+- [x] 8 goon character definitions + procedural canvas sprites
+- [x] Campaign mode (6 chapters, fight flow, progress tracking, hero lock)
+- [x] AI difficulty scaling (5-dimension per-fight vectors)
+- [x] Training mode (free practice sandbox)
+- [x] Wire Yuki faces into submission cutscene + portrait display
+- [x] SubmissionDisplay component (3-image composite with placeholder technique shots)
+- [x] Side-scroller engine (5 scenarios, canvas-based, wired into campaign + mini-games menu)
+- [x] 6 comedy mini-games (CatchMouthguard, CleanMats, BeltWhipping, WashGi, DontGetStacked, TapeFingers)
+- [x] Mini-game select screen with game picker + side-scroller access
+- [x] Daily challenge expansion (32 challenges, streak tracker, milestone rewards)
+- [x] Ad/IAP stubs (RewardedAd + IAP objects, UI buttons hidden when unavailable)
+- [x] iOS CSS prep (viewport-fit=cover, safe-area insets, Apple web app meta tags)
+- [x] Update living documents (BUILD_STATUS.md + TASK_LIST.md)
+
+---
+
+## IMMEDIATE (Pre-Phase 2)
 
 - [x] v5 moves redesign — replace entire MOVES object
 - [x] Add Ashi Garami position (POS, POS_DOM, layout, links, sprites)
@@ -22,18 +46,18 @@
 - [x] Fix responsive sprite sizing — fighters capped to viewport-relative sizes
 - [x] Remove white backgrounds from all artwork images (23 images processed)
 - [x] Re-process all 23 artwork images with flood-fill BG removal (removes shadows too)
-- [x] Add randomized arena backgrounds (5 arenas: Dojo, Brick Wall, Warehouse, Outdoor, Underground)
-- [x] Upgrade arenas to 5 elaborate animated arenas (Traditional Dojo, Neon Underground, Steel Cage, Rooftop Sunset, Jungle Temple) with CSS animations
-- [x] Add anime-style impact effects between moves (burst, speed lines, radial, manga lines)
-- [x] Upgrade anime impact effects — slower (0.8-1.2s), bigger, layered pseudo-elements, shockwave rings
+- [x] Add randomized arena backgrounds (5 arenas)
+- [x] Upgrade arenas to 5 elaborate animated arenas with CSS animations
+- [x] Add anime-style impact effects between moves
+- [x] Upgrade anime impact effects — slower, bigger, layered pseudo-elements, shockwave rings
 - [x] Slow down AI move display — shows "Attempting [move]" with 1.8s delay
 - [x] Add submission cutscene with face close-ups before minigame
-- [x] Upgrade submission cutscene — bigger faces (w-48/h-48), rip/claw transition, scratch lines, SF-style text, 3.2s duration
+- [x] Upgrade submission cutscene — bigger faces, rip/claw transition, SF-style text
 - [x] Add subtle blink animation on idle/clinch/effort/tired poses
-- [x] Standardize glow borders on all fight sprites (subtler, character-colored)
+- [x] Standardize glow borders on all fight sprites
 - [x] Fix Adele sprite size — added sizeBoost:1.3 to character config
-- [x] Victory screen shows winner face artwork with zoom animation (replaces trophy emoji)
-- [x] Result screen shows winner/loser face artwork (replaces trophy/skull emoji)
+- [x] Victory screen shows winner face artwork with zoom animation
+- [x] Result screen shows winner/loser face artwork
 
 ---
 
@@ -44,12 +68,7 @@
   - Wanted: Moving graphics, sounds start immediately, heartbeat/breathing audio
   - See: [Splash Screen Prompts](#splash-screen-prompts) section below
 - [x] **Character idle animations** — breathing and blinking for all characters
-  - Breathing: Enhanced breatheA with 3px translateY + 1% scale pulse (visible chest movement)
-  - Blinking: Fixed — moved to inner img, uses brightness filter instead of opacity (no glow artifacts)
 - [ ] **Review all animations** — verify no leftover Marcus/Adele animations from old build
-- [ ] **Submission display** — show attack face + defense face + technique shot during sub minigame
-  - Currently: Shows procedural minigame UI only
-  - Wanted: Artwork-based 3-image composite (per lockdown-submissions.md)
 
 ---
 
@@ -59,10 +78,6 @@
 - [ ] Tier 1 (9 sprites): idle, idle2, win, lose, hit, tired, effort, tapOut, clinch — visible in ALL fights
 - [ ] Tier 2 (15 sprites): all grapple positions — visible in non-Marcus matchups only
 - Target dimensions: ~150-170px wide x ~180px tall
-
-### Turtle Position Artwork
-- [x] Turtle artwork embedded in ARTWORK_DATA (BG removed versions)
-- [ ] Re-add Turtle position to game code (currently removed)
 
 ### Submission Technique Shots (generate once, reuse for all pairings)
 Use prompts from `lockdown-submissions.md` — PART 2.
@@ -89,6 +104,17 @@ Use prompts from `lockdown-submissions.md` — PART 1.
 - [ ] Diego Attack Face (when character is designed)
 - [ ] Diego Defense Face
 
+### Goon Character Sprites (8 goons — currently procedural canvas)
+- [ ] 8 goon fighting sprite sets (6 fighting + 2 face per goon = 64 PNGs)
+
+### Side-Scroller Assets
+- [ ] 4 tiling pixel art background strips
+- [ ] 18-24 character run/jump/dodge frames
+- [ ] Obstacle sprites (currently colored rectangles)
+
+### Mini-Game Assets
+- [ ] ~30 game-specific sprites (mouthguards, gis, stains, belts, etc.)
+
 ### Position Art — Additional Pairs
 Use prompts from `lockdown-positions.md`.
 
@@ -112,12 +138,12 @@ Per `lockdown-characters.md`:
 
 ## CODE TASKS
 
-- [x] Replace all ARTWORK_DATA with BG-removed versions from `Final Artwork/Backgrounds Removed/` (32 keys total)
-- [ ] Add submission artwork display component (SubmissionDisplay) — sub attack/defend art now embedded
+- [x] Replace all ARTWORK_DATA with BG-removed versions from `Final Artwork/Backgrounds Removed/`
+- [x] Add submission artwork display component (SubmissionDisplay)
 - [x] Add Adele sprites (portrait artwork used for all poses via initAdeleSprites)
 - [ ] Add Yuki procedural sprites for Ashi Garami poses
-- [ ] Wire Yuki face shots into submission cutscene UI (artwork embedded, code not updated)
-- [ ] Wire Yuki portrait into character display (artwork embedded, code not updated)
+- [x] Wire Yuki face shots into submission cutscene UI
+- [x] Wire Yuki portrait into character display
 - [ ] Add position-aware artwork for Marcus vs Yuki (process the 4 existing images)
 - [ ] Audio: Add heartbeat/breathing SFX for splash screen
 - [ ] Audio: Review all audio cue triggers work with v5 positions
@@ -126,18 +152,20 @@ Per `lockdown-characters.md`:
 
 ## DEPLOYMENT
 
-- [x] Vercel initial deploy (free tier, static site) — DONE, project: lockdown_bjj
+- [x] Vercel initial deploy (free tier, static site)
 - [ ] Custom domain setup (if desired)
 - [ ] Performance audit (1MB+ HTML load time)
+- [ ] iOS Capacitor build (requires macOS + Xcode + Apple Developer account)
+- [ ] AdMob account + ad unit IDs (for real ad integration)
 
 ---
 
 ## Splash Screen Prompts
 
 ### Best AI Tools for Animated Splash Graphics
-1. **Kling AI** (kling.ai) — Best for short animated video clips from a still image. Generate a 3-5 second looping animation of the title screen.
+1. **Kling AI** (kling.ai) — Best for short animated video clips from a still image
 2. **Runway Gen-3** (runway.ml) — Image-to-video, can animate pixel art with motion
-3. **Pika** (pika.art) — Good for subtle motion on still images (breathing, particles)
+3. **Pika** (pika.art) — Good for subtle motion on still images
 
 ### Prompt for Animated Splash (use with Kling/Runway):
 ```
@@ -163,3 +191,4 @@ Dramatic cinematic heartbeat sound design. Deep bass heartbeat pulse that builds
 - Character descriptions for art prompts are in `lockdown-characters.md`
 - Animation system reference is in `lockdown-animation-framework.md`
 - v5 design rationale is in `lockdown_v5_redesign.md`
+- Phase 2 plan docs are in `Phase 2 Plan/`
