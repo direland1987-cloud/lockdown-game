@@ -4,6 +4,30 @@
 
 ---
 
+## ENDGAME BUILD (v3.0) — COMPLETE
+
+- [x] Add 3 new characters (Rusty Jones, Luta Duarte, Mahmedov) with stats, POS_AFFINITY, DEFAULT_LOADOUTS
+- [x] Enhanced SVG sprite system — pose-aware sprites per character with body proportions, hair, clothing
+- [x] Head sprites for new characters in generateHeadSprites()
+- [x] Campaign opponent generator — seeded RNG, tier-scaled stats, random visuals/names
+- [x] 5-act campaign rework (was 6 chapters) — 20 fights total, boss fights unlock characters
+- [x] Campaign story system — "Who stole the Red Book?" — typewriter dialogue, 5-act plot
+- [x] Campaign screens: campaign_map, campaign_prefight, campaign_result, campaign_gameover, campaign_victory, campaign_story
+- [x] Enhanced side-scroller — jump/slide/punch, 3 hearts, collectibles, obstacles, act-based themes, parallax
+- [x] Side-scroller wired between EVERY campaign non-boss win
+- [x] Boss defeats unlock characters for arcade mode
+- [x] Campaign save/load in localStorage
+- [x] Side-scroller passes campaignAct for act-based theming
+- [x] Side-scroller stamina bonus carries into campaign state
+- [x] Playwright test suite — 25 tests across 4 files (navigation, fight-gameplay, mobile, edge-cases)
+- [x] Desktop + mobile test projects (Chromium-based)
+- [x] Fix: React hooks violations (useState in conditional blocks)
+- [x] Fix: Orphaned old SideScroller code causing syntax error
+- [x] Fix: Character select respects campaign character unlocks
+- [x] Update living documents
+
+---
+
 ## PHASE 2 — COMPLETE
 
 - [x] localStorage persistence (replace _memStore with localStorage + Safari fallback)

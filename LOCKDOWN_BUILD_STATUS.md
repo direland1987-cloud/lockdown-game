@@ -2,10 +2,11 @@
 
 ## Current Build
 **Location:** `lockdown-deploy/index.html`
-**Version:** 2.0 (Phase 2)
-**Size:** ~1,100KB+ (single self-contained HTML file)
+**Version:** 3.0 (Endgame Build)
+**Size:** ~4MB (single self-contained HTML file)
 **Dependencies:** React 18.2 (CDN), ReactDOM 18.2 (CDN), Tailwind CSS (CDN)
 **Audio:** 9 MP3 files in `lockdown-deploy/` (referenced relatively)
+**Tests:** Playwright test suite in `lockdown-deploy/tests/` — 25 desktop tests, 25 mobile tests
 
 ---
 
@@ -99,6 +100,67 @@
 
 ---
 
+## Endgame Build — What Was Added (v3.0)
+
+### 1. Three New Characters
+- **Rusty "The Croc" Jones** — Trickster/Unorthodox, Australian, unlocked by beating Act 2 boss
+- **Luta "Iron Hand" Duarte** — Pure Submission Artist, Brazilian, Act 1 boss
+- **Mahmedov "The Anvil"** — Smothering Pressure/Wrestling, Dagestani, unlocked by beating Act 4 boss
+- All three have POS_AFFINITY entries, DEFAULT_LOADOUTS, head sprites, and enhanced SVG fallback sprites
+- SVG sprites are pose-aware (17 poses) with character-specific body proportions, hair, and clothing
+
+### 2. Enhanced SVG Sprite System
+- `generateEnhancedSVGSprite(char, pose)` — Creates pose-aware SVG sprites per character
+- Character-specific body proportions (stocky vs lean vs muscular), distinctive hair, clothing, skin tones
+- 17 poses: idle, idle2, win, lose, hit, tired, effort, clinch, tapOut, guardTop, guardBtm, mountTop, mountBtm, pressTop, pinned, backTop, backTaken
+
+### 3. Campaign Opponent Generator
+- `generateOpponent(seed, tier)` — Seeded RNG for consistency across sessions
+- Randomized visuals (skin, hair, shorts, build archetype), random names from BJJ nickname pool
+- Stats scaled to campaign tier, returns CHARS-compatible object
+
+### 4. 5-Act Campaign Rework (20 fights)
+- **Act 1 (White Belt):** 3 generated opponents + Boss: Luta Duarte
+- **Act 2 (Blue Belt):** 3 generated + Boss: Rusty Jones (unlocks Rusty)
+- **Act 3 (Purple Belt):** 3 generated + Boss: Adele Fiorevar
+- **Act 4 (Brown Belt):** 3 generated + Boss: Mahmedov (unlocks Mahmedov)
+- **Act 5 (Black Belt):** 3 generated + Final Boss: Darius Okeke (unlocks Darius)
+- Campaign state: act, fightIndex, totalFights, playerChar, stamina carry-over, momentum, wins, losses (max 3), storyFlags, unlockedChars
+- New screens: campaign_map (5-act visual map), campaign_prefight (stat comparison), campaign_gameover, campaign_victory, campaign_story (dialogue system)
+- Side-scroller runs between EVERY non-boss win
+- Boss defeats unlock characters for arcade mode
+- Campaign save/load in localStorage
+
+### 5. Full Campaign Storyline — "Who Stole the Red Book?"
+- `CAMPAIGN_STORY` data structure with dialogue for all 5 acts
+- Typewriter dialogue effect with speaker colors, dot pagination
+- Story beats: pre-act intros, between-fight dialogue, post-boss reveals
+- Plot: Professor Cascao's Red Book → tournament → gym politics → GrappleCorp corporate villain → twist resolution
+- BJJ culture humor throughout (acai, pineapple tradition, heel hook debates, etc.)
+
+### 6. Enhanced Side-Scroller
+- Jump, slide/duck, punch mechanics
+- 3 hearts health system
+- Collectibles: acai bowl (+10 stamina), protein shake (+15), belt stripe (+50 score), gi patch (+5 momentum), tape roll (+1 heart)
+- Obstacles: mat, gi, ball, roller, dummy, rival, professor
+- 5 act-based environment themes with parallax scrolling
+- Touch controls (Jump/Slide/Punch buttons)
+- Speed increases over time
+
+### 7. Playwright Test Suite
+- `playwright.config.ts` with desktop (1280x800) + mobile (390x844) projects
+- 4 test files: navigation, fight-gameplay, mobile, edge-cases
+- 25 tests covering: screen navigation, fight mechanics, mobile viewport, touch events, error handling
+- Bug fixes found by tests: orphaned SideScroller code, React hooks violations (useState in conditional blocks), ambiguous locator resolution
+
+### 8. Bug Fixes
+- Fixed orphaned old SideScroller code causing "Illegal return statement"
+- Fixed React hooks violation: 4 useState calls inside conditional `if(screen===)` blocks moved to component top level
+- Fixed missing closing brace on new SideScroller function
+- Fixed character select screen to respect campaign character unlocks
+
+---
+
 ## What Was Done (v5 Redesign)
 
 ### 1. Positions System
@@ -148,11 +210,15 @@ Each character has positional affinities (0.7x to 1.3x multiplier) that affect:
 | ID | Name | Style | Difficulty | Locked | Status |
 |----|------|-------|-----------|--------|--------|
 | marcus | Marcus "The Bull" Reyes | Pressure Wrestler | EASY | No | Has procedural sprites + artwork |
-| **adele** | **Adele "The Viper" Fiorevar** | **Guard & Leg Lock Specialist** | **MEDIUM** | **No** | **NEW — has artwork portrait as sprites + head sprites** |
+| adele | Adele "The Viper" Fiorevar | Guard & Leg Lock Specialist | MEDIUM | No | Has artwork portrait as sprites + head sprites |
 | yuki | Yuki "Spider" Tanaka | Technical Guard Player | HARD | No | Has procedural sprites |
-| darius | Darius "The Ghost" Okeke | Counter Fighter | MEDIUM | Yes | Has procedural sprites |
+| darius | Darius "The Ghost" Okeke | Counter Fighter | MEDIUM | Yes (unlock: Act 5) | Has procedural sprites |
 | diego | "Loco" Diego Vega | Wild Card Scrambler | MEDIUM | Yes | Has procedural sprites |
-| **8 goons** | Campaign opponents | Various | Scaled | N/A | **Procedural canvas sprites** |
+| **rusty** | **Rusty "The Croc" Jones** | **Trickster / Unorthodox** | **HARD** | **Yes (unlock: Act 2)** | **NEW — Enhanced SVG sprites** |
+| **luta** | **Luta "Iron Hand" Duarte** | **Pure Submission Artist** | **MEDIUM** | **Yes (Act 1 boss)** | **NEW — Enhanced SVG sprites** |
+| **mahmedov** | **Mahmedov "The Anvil"** | **Smothering Pressure / Wrestling** | **HARD** | **Yes (unlock: Act 4)** | **NEW — Enhanced SVG sprites** |
+| 8 goons | Campaign opponents | Various | Scaled | N/A | Procedural canvas sprites |
+| **∞ generated** | **Campaign opponents** | **Various** | **Scaled per act** | **N/A** | **Procedural via generateOpponent()** |
 
 ### 5. Final Artwork Integration
 **32 artwork sprites embedded** (base64 WebP, ~3.4MB total, all from `Final Artwork/Backgrounds Removed/`):
@@ -247,7 +313,7 @@ Per `lockdown-submissions.md`, submissions use a **3-image composite**:
 | Mode | Description | Status |
 |------|-------------|--------|
 | **Arcade** | Quick fight — pick character, difficulty, opponent | Complete |
-| **Campaign** | 6-chapter story mode with 8 goon opponents, progressive difficulty | Complete |
+| **Campaign** | 5-act story mode (20 fights) with "Who stole the Red Book?" storyline, boss fights, character unlocks | Complete (Endgame) |
 | **Training** | Practice sandbox with easy AI, no records | Complete |
 | **Mini-Games** | 6 comedy mini-games + 5 side-scrollers | Complete |
 | **Daily Challenge** | 32 rotating challenges with streak rewards | Complete |
