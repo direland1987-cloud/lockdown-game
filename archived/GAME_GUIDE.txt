@@ -1,0 +1,168 @@
+================================================================================
+LOCKDOWN - 16-BIT BRAZILIAN JIU-JITSU FIGHTING GAME
+================================================================================
+
+OVERVIEW
+--------
+LOCKDOWN is a turn-based grappling combat game featuring two elite BJJ fighters
+competing for dominance through positional control and submission attempts.
+
+Two characters battle through 8 grappling positions using a stamina-based action
+system. Victory comes from either reducing your opponent's health to 0 or
+forcing them to submit.
+
+CHARACTERS
+----------
+Marcus "The Bull" Reyes - A powerful GI fighter who excels in top positions.
+Yuki "Spider" Tanaka - A technical leg-lock specialist with finesse.
+
+GRAPPLING POSITIONS (8 total)
+-----------------------------
+Standing Clinch  → Starting position. Can advance to closed guard, half guard, or side control.
+
+Closed Guard     → Top player has mount/side control options. Bottom escapes to standing/open guard.
+Open Guard       → Bottom player's guard. Top can advance to side control. Bottom can escape.
+Half Guard       → Intermediate guard. Top advances to side/mount. Bottom escapes to standing/open.
+
+Side Control     → Strong top position. Advances to mount or back mount. Escapes to guard/turtle.
+Mount            → Dominant top position. Can advance to back mount. Escape to side control/guard.
+Back Mount       → Apex top position. Escape to mount or turtle.
+
+Turtle           → Defensive bottom position. Can advance to back mount or escape to guard.
+
+GAME MECHANICS
+--------------
+Turn-Based System
+  Each turn, both players take actions in sequence. After player 1 acts,
+  the AI opponent responds.
+
+Stamina System (0-100)
+  Every action costs stamina:
+    - Advance Position: 25 stamina
+    - Attempt Submission: 30 stamina
+    - Defend: 15 stamina
+    - Escape Position: 20 stamina
+
+  Stamina recovers +5 per turn naturally.
+  Low stamina (<20) prevents high-cost actions.
+
+Health System (0-100)
+  Players start with 100 health.
+  Position advances deal 5 damage.
+  Submissions deal 30 damage if completed.
+  Match ends when either fighter reaches 0 health.
+
+Submission Minigame
+  When a submission is attempted:
+    - DEFENDER: Mash Z to escape (drain progress bar)
+    - ATTACKER: Mash Z to complete (fill progress bar)
+
+  If progress reaches max → Submission complete (30 damage)
+  If progress reaches 0 → Submission escaped, return to match
+
+CONTROLS
+--------
+Navigation:
+  Arrow Keys     - Move through menus (left/right)
+  Z              - Confirm selection / Mash for submissions
+  X              - Cancel
+
+Match Actions (when positioned):
+  A              - Advance Position (if available)
+  S              - Attempt Submission
+  D              - Defend
+  F              - Escape Position (if available)
+
+UI DISPLAYS
+-----------
+Health Bar      - Red/green bar showing remaining hitpoints
+Stamina Bar     - Yellow bar showing action energy remaining
+Position Name   - Current grappling position displayed at top
+Turn Counter    - Shows which turn/round you're on
+
+STRATEGY TIPS
+-------------
+1. Watch your stamina! Low stamina forces defensive plays.
+2. Advancing position deals damage and improves your tactical situation.
+3. Submissions require both high stamina AND a successful minigame.
+4. Mix offense and defense - don't spam the same move.
+5. Position matters: Some positions are better for top/bottom players.
+6. Recovery: Stamina naturally recovers each turn, so rest when needed.
+
+AUDIO FEATURES
+--------------
+The game includes full audio integration with:
+  - Menu navigation sounds (UI)
+  - Impact and grappling transition effects (Body Impacts)
+  - Submission attempt sounds (Sub sounds)
+  - Character breathing and grunts (Vocals)
+  - Crowd reactions (Crowd sounds)
+  - Dynamic music that adapts to match state
+
+Audio gracefully degrades if files aren't loaded - game remains fully playable
+even if music/sound effects are missing.
+
+VISUAL STYLE
+-----------
+- 960x640 pixel canvas (16-bit arcade resolution)
+- Pixel-perfect sprite rendering (imageSmoothingEnabled: false)
+- CRT scanline overlay for authentic arcade feel
+- Golden arcade cabinet border
+- Screen shake on impacts
+- Flash effects on position transitions
+- Press Start 2P font (retro arcade style)
+
+FILE STRUCTURE
+--------------
+/separated/{position_name}/
+  {position_name}_marcus.png    - Marcus sprite for this position
+  {position_name}_yuki.png      - Yuki sprite for this position
+
+/sprites/solo/
+  B1_marcus_idle.png            - Menu selection
+  B2_yuki_idle.png              - Menu selection
+  B3_marcus_victory.png         - Victory screen
+  B4_yuki_victory.png           - Victory screen
+  B5_marcus_defeat.png          - Defeat screen
+  B6_yuki_defeat.png            - Defeat screen
+
+/audio/
+  impacts/        - Body impact sounds
+  grapple/        - Transition sounds
+  subs/           - Submission sounds
+  vocal/          - Breathing and grunts
+  crowd/          - Crowd reactions
+  music/          - Background music (currently gracefully handled if absent)
+  ui/             - Menu and action UI sounds
+
+GAME STATES
+-----------
+1. TITLE_SCREEN    - Main menu, press Z to start
+2. CHARACTER_SELECT - Choose your fighter (Marcus or Yuki)
+3. MATCH           - Main battle screen, select actions with A/S/D/F
+4. MATCH_SUBMITTING - Submission minigame (attacker filling bar)
+5. MATCH_DEFENDING - Submission minigame (defender draining bar)
+6. RESULT          - Victory/Defeat screen, press Z to return to title
+
+GETTING STARTED
+---------------
+1. Open index.html in a web browser (Chrome, Firefox, Edge recommended)
+2. Press Z on the title screen
+3. Select your character using arrow keys, confirm with Z
+4. Match begins - use A/S/D/F to select actions
+5. Manage stamina carefully - rest when needed
+6. Complete submissions in the minigame
+7. Reduce opponent health to 0 to win
+
+TECHNICAL NOTES
+---------------
+- Single-file HTML game with inline CSS/JS
+- Uses Howler.js for audio (CDN-loaded)
+- Sprites scaled down from 1536x1024 to fit 960x640 canvas
+- Canvas-based rendering for performance
+- Responsive to keyboard input only (arcade-style controls)
+
+================================================================================
+Developed for the LOCKDOWN BJJ Fighting Game Project
+16-bit CPS2 Arcade Style Fighting Game
+================================================================================

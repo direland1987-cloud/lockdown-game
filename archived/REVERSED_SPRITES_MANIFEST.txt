@@ -1,0 +1,59 @@
+================================================================================
+BJJ REVERSED SPRITES - GENERATION MANIFEST
+================================================================================
+
+Script: /sessions/fervent-nice-sagan/mnt/BJJ 16bit game/scripts/generate_reversed_sprites.py
+
+OVERVIEW:
+This script generates horizontally-flipped (mirrored) versions of all BJJ grappling
+sprites. This is a classic fighting game technique - when a character needs to be on
+the opposite side of the screen, you simply use the mirrored sprite instead of
+creating entirely new artwork.
+
+PROCESSED POSITIONS:
+1. closed_guard
+2. open_guard
+3. half_guard
+4. side_control
+5. mount
+6. back_mount
+7. turtle
+8. standing_clinch
+
+GENERATED FILES (32 total):
+For each position, the following reversed sprites were created:
+
+  - {position}_marcus_rev.png        (Mirrored Marcus sprite)
+  - {position}_yuki_rev.png          (Mirrored Yuki sprite)
+  - {position}_marcus_full_rev.png   (Mirrored Marcus full sprite)
+  - {position}_yuki_full_rev.png     (Mirrored Yuki full sprite)
+
+All files are saved in:
+  /sessions/fervent-nice-sagan/mnt/BJJ 16bit game/separated/{position}/
+
+IMAGE SPECIFICATIONS:
+  Format:        PNG with RGBA transparency
+  Flip method:   Horizontal (left-right mirror)
+  Dimensions:    Preserved from original
+  Transparency:  Preserved
+
+VERIFICATION RESULTS:
+  ✓ All 32 reversed sprites generated successfully
+  ✓ All files have correct dimensions and color format
+  ✓ Transparency layer (alpha channel) preserved in all images
+  ✓ All files are valid PNG format
+
+USAGE IN GAME:
+When a character needs to switch to the opposite side (facing direction), load the
+_rev version of the sprite instead of the original. This provides the same character
+from the other direction without needing duplicate artwork.
+
+Example:
+  - Marcus on left side: closed_guard_marcus.png
+  - Marcus on right side: closed_guard_marcus_rev.png
+
+TOTAL FILE COUNT IN SEPARATED DIRECTORY:
+  32 new _rev images added
+  ≈ 10.5 MB of additional sprite data
+
+================================================================================

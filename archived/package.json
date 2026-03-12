@@ -1,0 +1,16 @@
+{
+  "name": "bjj-16bit-game",
+  "version": "1.0.0",
+  "description": "A comprehensive turn-based Brazilian Jiu-Jitsu fighting game built as a single HTML file with arcade-style aesthetics and gameplay.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}

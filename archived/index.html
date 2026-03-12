@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOCKDOWN - BJJ Fighting Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 960px;
+            height: 640px;
+            background: #0a0a0a;
+            border: 4px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* CRT Scanline Overlay */
+        #gameContainer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.15),
+                    rgba(0, 0, 0, 0.15) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Screen flash effect */
+        #flashOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Debug panel (hidden by default) */
+        #debugPanel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            padding: 10px;
+            font-size: 10px;
+            font-family: monospace;
+            border: 1px solid #0f0;
+            max-width: 300px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="960" height="640"></canvas>
+        <div id="flashOverlay"></div>
+    </div>
+    <div id="debugPanel"></div>
+
+    <!-- Howler.js Audio Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+
+    <!-- Audio Manager -->
+    <script src="scripts/audio-manager.js"></script>
+
+    <script>
+        // ============================================================
+        // LOCKDOWN BJJ Fighting Game - Main Game Engine
+        // ============================================================
+
+        const CANVAS_WIDTH = 960;
+        const CANVAS_HEIGHT = 640;
+        const SPRITE_SCALE = 1.5;
+
+        // Game states
+        const GAME_STATES = {
+            TITLE_SCREEN: 'TITLE_SCREEN',
+            CHARACTER_SELECT: 'CHARACTER_SELECT',
+            MATCH: 'MATCH',
+            MATCH_SUBMITTING: 'MATCH_SUBMITTING',
+            MATCH_DEFENDING: 'MATCH_DEFENDING',
+            RESULT: 'RESULT'
+        };
+
+        // Positions and graph
+        const POSITIONS = {
+            standing_clinch: { name: 'Standing Clinch', level: 0 },
+            closed_guard: { name: 'Closed Guard', level: 1 },
+            open_guard: { name: 'Open Guard', level: 1 },
+            half_guard: { name: 'Half Guard', level: 1 },
+            side_control: { name: 'Side Control', level: 2 },
+            mount: { name: 'Mount', level: 2 },
+            back_mount: { name: 'Back Mount', level: 2 },
+            turtle: { name: 'Turtle', level: 2 }
+        };
+
+        // Position graph - where can you advance/escape to
+        const POSITION_TRANSITIONS = {
+            standing_clinch: {
+                advance: ['closed_guard', 'half_guard', 'side_control'],
+                escape: []
+            },
+            closed_guard: {
+                advance: ['mount', 'side_control'],
+                escape: ['standing_clinch', 'open_guard']
+            },
+            open_guard: {
+                advance: ['closed_guard', 'side_control'],
+                escape: ['standing_clinch', 'turtle']
+            },
+            half_guard: {
+                advance: ['side_control', 'mount'],
+                escape: ['standing_clinch', 'open_guard']
+            },
+            side_control: {
+                advance: ['mount', 'back_mount'],
+                escape: ['half_guard', 'closed_guard', 'turtle']
+            },
+            mount: {
+                advance: ['back_mount'],
+                escape: ['side_control', 'closed_guard']
+            },
+            back_mount: {
+                advance: [],
+                escape: ['mount', 'turtle']
+            },
+            turtle: {
+                advance: ['back_mount'],
+                escape: ['open_guard', 'half_guard']
+            }
+        };
+
+        // Game state
+        let gameState = GAME_STATES.TITLE_SCREEN;
+        let currentPosition = 'standing_clinch';
+        let topPlayer = 'marcus';
+        let bottomPlayer = 'yuki';
+        let selectedCharacter = null;
+        let opponentCharacter = null;
+
+        // Fighter stats
+        const fighters = {
+            marcus: {
+                name: 'Marcus "The Bull" Reyes',
+                color: '#FF4444',
+                health: 100,
+                maxHealth: 100,
+                stamina: 100,
+                maxStamina: 100,
+                description: 'Powerful GI fighter, strong in top positions'
+            },
+            yuki: {
+                name: 'Yuki "Spider" Tanaka',
+                color: '#4488FF',
+                health: 100,
+                maxHealth: 100,
+                stamina: 100,
+                maxStamina: 100,
+                description: 'Technical leg-lock specialist'
+            }
+        };
+
+        // Current match state
+        let matchState = {
+            p1: { ...fighters.marcus },
+            p2: { ...fighters.yuki },
+            turn: 0,
+            submissionMode: null,
+            submissionProgress: 0,
+            submissionMaxProgress: 100
+        };
+
+        // Input tracking
+        let keys = {};
+        let menuSelection = 0;
+
+        // ============================================================
+        // SPRITE LOADING & RENDERING
+        // ============================================================
+
+        const spriteCache = {};
+        let positionRenderer = null;
+
+        async function loadSprites() {
+            // Load solo sprites for menus
+            spriteCache.marcus_idle = await loadImage('sprites/solo/B1_marcus_idle.png');
+            spriteCache.yuki_idle = await loadImage('sprites/solo/B2_yuki_idle.png');
+            spriteCache.marcus_victory = await loadImage('sprites/solo/B3_marcus_victory.png');
+            spriteCache.yuki_victory = await loadImage('sprites/solo/B4_yuki_victory.png');
+            spriteCache.marcus_defeat = await loadImage('sprites/solo/B5_marcus_defeat.png');
+            spriteCache.yuki_defeat = await loadImage('sprites/solo/B6_yuki_defeat.png');
+
+            // Load position sprites
+            const positions = Object.keys(POSITIONS);
+            for (const pos of positions) {
+                spriteCache[`${pos}_marcus`] = await loadImage(`separated/${pos}/${pos}_marcus.png`);
+                spriteCache[`${pos}_yuki`] = await loadImage(`separated/${pos}/${pos}_yuki.png`);
+            }
+
+            console.log('Sprites loaded:', Object.keys(spriteCache).length);
+        }
+
+        function loadImage(path) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => {
+                    console.warn(`Failed to load image: ${path}`);
+                    resolve(null);
+                };
+                img.src = path;
+            });
+        }
+
+        // ============================================================
+        // CANVAS RENDERING
+        // ============================================================
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+
+        function clearCanvas() {
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+
+        function drawText(text, x, y, size = 16, color = '#FFD700', align = 'center') {
+            ctx.save();
+            ctx.font = `${size}px 'Press Start 2P', monospace`;
+            ctx.fillStyle = color;
+            ctx.textAlign = align;
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        function drawOutlineText(text, x, y, size = 16, fillColor = '#FFD700', outlineColor = '#000') {
+            ctx.save();
+            ctx.font = `${size}px 'Press Start 2P', monospace`;
+            ctx.textAlign = 'center';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = outlineColor;
+            ctx.strokeText(text, x, y);
+            ctx.fillStyle = fillColor;
+            ctx.fillText(text, x, y);
+            ctx.restore();
+        }
+
+        function drawImage(img, x, y, width, height) {
+            if (img) {
+                ctx.drawImage(img, x, y, width, height);
+            }
+        }
+
+        function drawRect(x, y, w, h, color, fill = true) {
+            ctx.fillStyle = color;
+            if (fill) {
+                ctx.fillRect(x, y, w, h);
+            } else {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, w, h);
+            }
+        }
+
+        function drawBar(x, y, w, h, current, max, emptyColor = '#333', fullColor = '#0f0') {
+            // Background
+            drawRect(x, y, w, h, emptyColor, true);
+            // Fill
+            const fillW = (current / max) * w;
+            drawRect(x, y, fillW, h, fullColor, true);
+            // Border
+            drawRect(x, y, w, h, '#fff', false);
+        }
+
+        // ============================================================
+        // SCREEN EFFECTS
+        // ============================================================
+
+        let screenShakeIntensity = 0;
+
+        function triggerScreenShake(intensity = 5, duration = 200) {
+            screenShakeIntensity = intensity;
+            setTimeout(() => {
+                screenShakeIntensity = 0;
+            }, duration);
+        }
+
+        function applyScreenShake() {
+            if (screenShakeIntensity > 0) {
+                const x = (Math.random() - 0.5) * screenShakeIntensity;
+                const y = (Math.random() - 0.5) * screenShakeIntensity;
+                canvas.style.transform = `translate(${x}px, ${y}px)`;
+            } else {
+                canvas.style.transform = 'none';
+            }
+        }
+
+        function flashScreen() {
+            const overlay = document.getElementById('flashOverlay');
+            overlay.style.background = 'rgba(255, 255, 255, 0.5)';
+            setTimeout(() => {
+                overlay.style.background = 'rgba(255, 255, 255, 0)';
+            }, 150);
+        }
+
+        // ============================================================
+        // GAME SCREENS
+        // ============================================================
+
+        function drawTitleScreen() {
+            clearCanvas();
+
+            // Draw arcade cabinet border
+            drawRect(20, 20, CANVAS_WIDTH - 40, CANVAS_HEIGHT - 40, '#FFD700', false);
+            drawRect(25, 25, CANVAS_WIDTH - 50, CANVAS_HEIGHT - 50, '#FFD700', false);
+
+            // Title
+            drawOutlineText('LOCKDOWN', CANVAS_WIDTH / 2, 80, 48, '#FFD700', '#FF4444');
+
+            // Subtitle
+            drawText('Brazilian Jiu-Jitsu Fighting Game', CANVAS_WIDTH / 2, 160, 12, '#fff');
+
+            // Blinking "PRESS START"
+            const blinkPhase = Math.floor(Date.now() / 500) % 2;
+            if (blinkPhase === 0) {
+                drawOutlineText('PRESS Z TO START', CANVAS_WIDTH / 2, 340, 16, '#00FF00', '#000');
+            }
+
+            // Control hints
+            drawText('Arrow Keys to Navigate', CANVAS_WIDTH / 2, 420, 10, '#AAA');
+            drawText('Z to Select / X to Cancel', CANVAS_WIDTH / 2, 450, 10, '#AAA');
+
+            // Credits
+            drawText('16-BIT CPS2 ARCADE STYLE', CANVAS_WIDTH / 2, 580, 8, '#666');
+        }
+
+        function drawCharacterSelect() {
+            clearCanvas();
+
+            drawText('SELECT YOUR CHARACTER', CANVAS_WIDTH / 2, 40, 20, '#FFD700');
+
+            const char1X = 150;
+            const char2X = 810;
+            const spriteY = 200;
+            const spriteSize = 160;
+
+            // Left character (Marcus)
+            if (spriteCache.marcus_idle) {
+                drawImage(spriteCache.marcus_idle, char1X - spriteSize / 2, spriteY, spriteSize, spriteSize);
+            }
+
+            // Right character (Yuki)
+            if (spriteCache.yuki_idle) {
+                drawImage(spriteCache.yuki_idle, char2X - spriteSize / 2, spriteY, spriteSize, spriteSize);
+            }
+
+            // Selection boxes
+            const boxColor = menuSelection === 0 ? '#FFD700' : '#666';
+            drawRect(char1X - spriteSize / 2 - 10, spriteY - 10, spriteSize + 20, spriteSize + 20, boxColor, false);
+
+            const box2Color = menuSelection === 1 ? '#FFD700' : '#666';
+            drawRect(char2X - spriteSize / 2 - 10, spriteY - 10, spriteSize + 20, spriteSize + 20, box2Color, false);
+
+            // Names
+            drawText(fighters.marcus.name, char1X, 400, 12, fighters.marcus.color);
+            drawText(fighters.yuki.name, char2X, 400, 12, fighters.yuki.color);
+
+            // Descriptions
+            drawText(fighters.marcus.description, char1X, 440, 8, '#AAA');
+            drawText(fighters.yuki.description, char2X, 440, 8, '#AAA');
+
+            // Instructions
+            drawText('Use LEFT/RIGHT to select', CANVAS_WIDTH / 2, 520, 10, '#fff');
+            drawText('Press Z to confirm', CANVAS_WIDTH / 2, 550, 10, '#fff');
+        }
+
+        function drawMatch() {
+            clearCanvas();
+
+            // Top bar - Fighter info
+            const barHeight = 80;
+            drawRect(0, 0, CANVAS_WIDTH, barHeight, '#1a1a1a', true);
+
+            // P1 Info (left)
+            drawText(fighters[selectedCharacter].name.split(' ')[0], 100, 20, 14, fighters[selectedCharacter].color);
+            drawText('HP:', 60, 45, 10, '#fff');
+            drawBar(85, 40, 120, 12, matchState.p1.health, matchState.p1.maxHealth, '#330000', '#00FF00');
+            drawText('ST:', 60, 65, 10, '#fff');
+            drawBar(85, 60, 120, 12, matchState.p1.stamina, matchState.p1.maxStamina, '#333300', '#FFFF00');
+
+            // P2 Info (right)
+            drawText(fighters[opponentCharacter].name.split(' ')[0], CANVAS_WIDTH - 100, 20, 14, fighters[opponentCharacter].color);
+            drawText('HP:', CANVAS_WIDTH - 140, 45, 10, '#fff');
+            drawBar(CANVAS_WIDTH - 125, 40, 120, 12, matchState.p2.health, matchState.p2.maxHealth, '#330000', '#00FF00');
+            drawText('ST:', CANVAS_WIDTH - 140, 65, 10, '#fff');
+            drawBar(CANVAS_WIDTH - 125, 60, 120, 12, matchState.p2.stamina, matchState.p2.maxStamina, '#333300', '#FFFF00');
+
+            // Position display
+            drawText(`Position: ${POSITIONS[currentPosition].name}`, CANVAS_WIDTH / 2, 50, 12, '#FFD700');
+            drawText(`Turn ${matchState.turn}`, CANVAS_WIDTH - 120, 10, 8, '#aaa');
+
+            // Draw position sprites
+            const spriteW = 320;
+            const spriteH = 320;
+            const spriteX = CANVAS_WIDTH / 2 - spriteW / 2;
+            const spriteY = (CANVAS_HEIGHT - spriteH) / 2 + 20;
+
+            const topSprite = spriteCache[`${currentPosition}_${topPlayer}`];
+            const bottomSprite = spriteCache[`${currentPosition}_${bottomPlayer}`];
+
+            if (bottomSprite) {
+                ctx.drawImage(bottomSprite, spriteX, spriteY, spriteW, spriteH);
+            }
+            if (topSprite) {
+                ctx.drawImage(topSprite, spriteX, spriteY, spriteW, spriteH);
+            }
+
+            // Action menu
+            const menuY = CANVAS_HEIGHT - 100;
+            drawRect(30, menuY - 10, CANVAS_WIDTH - 60, 90, '#1a1a2e', true);
+            drawRect(30, menuY - 10, CANVAS_WIDTH - 60, 90, '#FFD700', false);
+
+            const moves = getAvailableMoves();
+            const moveLabels = moves.map(m => m.label);
+
+            for (let i = 0; i < moveLabels.length; i++) {
+                const x = 60 + i * 200;
+                const color = i === menuSelection ? '#00FF00' : '#fff';
+                const key = ['A', 'S', 'D', 'F'][i];
+                drawText(`[${key}] ${moveLabels[i]}`, x, menuY + 10, 12, color);
+            }
+
+            // Stamina warning
+            if (matchState.p1.stamina < 20) {
+                drawText('LOW STAMINA!', 100, 120, 12, '#FF4444');
+            }
+        }
+
+        function drawSubmissionMinigame() {
+            clearCanvas();
+
+            const p1 = matchState.p1;
+            const p2 = matchState.p2;
+
+            drawText('SUBMISSION MINIGAME', CANVAS_WIDTH / 2, 40, 16, '#FFD700');
+
+            if (matchState.submissionMode === 'defending') {
+                drawText('MASH Z TO ESCAPE!', CANVAS_WIDTH / 2, 100, 14, '#FF4444');
+
+                // Progress bar
+                const barW = 400;
+                const barH = 30;
+                const barX = (CANVAS_WIDTH - barW) / 2;
+                const barY = 200;
+
+                drawRect(barX - 2, barY - 2, barW + 4, barH + 4, '#FFD700', false);
+                drawBar(barX, barY, barW, barH, matchState.submissionProgress, matchState.submissionMaxProgress, '#330000', '#FF4444');
+
+                // Instructions
+                drawText('If it fills: You are submitted!', CANVAS_WIDTH / 2, 300, 10, '#fff');
+            } else {
+                drawText('MASH Z TO COMPLETE!', CANVAS_WIDTH / 2, 100, 14, '#00FF00');
+
+                // Progress bar
+                const barW = 400;
+                const barH = 30;
+                const barX = (CANVAS_WIDTH - barW) / 2;
+                const barY = 200;
+
+                drawRect(barX - 2, barY - 2, barW + 4, barH + 4, '#FFD700', false);
+                drawBar(barX, barY, barW, barH, matchState.submissionProgress, matchState.submissionMaxProgress, '#003300', '#00FF00');
+
+                // Instructions
+                drawText('If it fills: Submission complete!', CANVAS_WIDTH / 2, 300, 10, '#fff');
+            }
+
+            // Remaining stamina
+            drawText(`Your Stamina: ${Math.max(0, matchState.p1.stamina)}`, CANVAS_WIDTH / 2, 380, 10, '#fff');
+
+            drawText('Press X to cancel', CANVAS_WIDTH / 2, 550, 10, '#AAA');
+        }
+
+        function drawResultScreen() {
+            clearCanvas();
+
+            const p1Health = matchState.p1.health;
+            const p2Health = matchState.p2.health;
+            const p1Wins = p1Health > 0;
+
+            // Winner text
+            drawOutlineText('MATCH END', CANVAS_WIDTH / 2, 80, 32, '#FFD700', '#FF4444');
+
+            if (p1Wins) {
+                drawOutlineText('YOU WIN!', CANVAS_WIDTH / 2, 160, 28, '#00FF00', '#000');
+
+                // Victor sprite
+                if (selectedCharacter === 'marcus' && spriteCache.marcus_victory) {
+                    drawImage(spriteCache.marcus_victory, CANVAS_WIDTH / 2 - 80, 220, 160, 160);
+                } else if (selectedCharacter === 'yuki' && spriteCache.yuki_victory) {
+                    drawImage(spriteCache.yuki_victory, CANVAS_WIDTH / 2 - 80, 220, 160, 160);
+                }
+            } else {
+                drawOutlineText('YOU LOSE!', CANVAS_WIDTH / 2, 160, 28, '#FF4444', '#000');
+
+                // Loser sprite
+                if (selectedCharacter === 'marcus' && spriteCache.marcus_defeat) {
+                    drawImage(spriteCache.marcus_defeat, CANVAS_WIDTH / 2 - 80, 220, 160, 160);
+                } else if (selectedCharacter === 'yuki' && spriteCache.yuki_defeat) {
+                    drawImage(spriteCache.yuki_defeat, CANVAS_WIDTH / 2 - 80, 220, 160, 160);
+                }
+            }
+
+            // Stats
+            drawText(`P1 Health: ${Math.max(0, p1Health)}`, CANVAS_WIDTH / 2, 450, 12, fighters[selectedCharacter].color);
+            drawText(`P2 Health: ${Math.max(0, p2Health)}`, CANVAS_WIDTH / 2, 480, 12, fighters[opponentCharacter].color);
+            drawText(`Rounds: ${matchState.turn}`, CANVAS_WIDTH / 2, 510, 12, '#fff');
+
+            // Continue
+            const blinkPhase = Math.floor(Date.now() / 500) % 2;
+            if (blinkPhase === 0) {
+                drawText('Press Z to return to menu', CANVAS_WIDTH / 2, 580, 10, '#00FF00');
+            }
+        }
+
+        // ============================================================
+        // GAME LOGIC
+        // ============================================================
+
+        function getAvailableMoves() {
+            const transitions = POSITION_TRANSITIONS[currentPosition];
+            const moves = [];
+
+            // Advance move
+            if (transitions.advance.length > 0) {
+                moves.push({
+                    label: 'Advance',
+                    action: 'advance',
+                    cost: 25
+                });
+            } else {
+                moves.push({
+                    label: '-----',
+                    action: null,
+                    cost: 0
+                });
+            }
+
+            // Submission move
+            moves.push({
+                label: 'Submit',
+                action: 'submit',
+                cost: 30
+            });
+
+            // Defend move
+            moves.push({
+                label: 'Defend',
+                action: 'defend',
+                cost: 15
+            });
+
+            // Escape move
+            if (transitions.escape.length > 0) {
+                moves.push({
+                    label: 'Escape',
+                    action: 'escape',
+                    cost: 20
+                });
+            } else {
+                moves.push({
+                    label: '-----',
+                    action: null,
+                    cost: 0
+                });
+            }
+
+            return moves;
+        }
+
+        function executeMove(moveIndex) {
+            const moves = getAvailableMoves();
+            const move = moves[moveIndex];
+
+            if (!move || !move.action) {
+                AudioManager.play('uiCancel');
+                return;
+            }
+
+            // Check stamina
+            if (matchState.p1.stamina < move.cost) {
+                AudioManager.play('uiCancel');
+                return;
+            }
+
+            AudioManager.play('moveConfirm');
+            matchState.p1.stamina -= move.cost;
+
+            switch (move.action) {
+                case 'advance':
+                    handleAdvance();
+                    break;
+                case 'escape':
+                    handleEscape();
+                    break;
+                case 'submit':
+                    handleSubmit();
+                    break;
+                case 'defend':
+                    handleDefend();
+                    break;
+            }
+
+            // Stamina recovery
+            matchState.p1.stamina = Math.min(100, matchState.p1.stamina + 5);
+            matchState.p2.stamina = Math.min(100, matchState.p2.stamina + 5);
+
+            matchState.turn++;
+
+            // AI opponent moves (simple logic)
+            setTimeout(() => {
+                executeAIMove();
+            }, 500);
+        }
+
+        function handleAdvance() {
+            const transitions = POSITION_TRANSITIONS[currentPosition];
+            const options = transitions.advance;
+
+            if (options.length === 0) return;
+
+            const newPos = options[Math.floor(Math.random() * options.length)];
+            transitionPosition(newPos, 'ADVANCE!');
+
+            AudioManager.play('impactHeavy', { pitchVariation: 0.1 });
+            AudioManager.playGrunt('attack');
+            flashScreen();
+            triggerScreenShake(5, 200);
+
+            // Damage
+            matchState.p2.health -= 5;
+        }
+
+        function handleEscape() {
+            const transitions = POSITION_TRANSITIONS[currentPosition];
+            const options = transitions.escape;
+
+            if (options.length === 0) return;
+
+            const newPos = options[Math.floor(Math.random() * options.length)];
+            transitionPosition(newPos, 'ESCAPE!');
+
+            AudioManager.play('scramble');
+            flashScreen();
+            triggerScreenShake(3, 150);
+        }
+
+        function handleSubmit() {
+            gameState = GAME_STATES.MATCH_SUBMITTING;
+            matchState.submissionMode = 'submitting';
+            matchState.submissionProgress = 0;
+            AudioManager.play('subAttempt');
+        }
+
+        function handleDefend() {
+            AudioManager.play('gripTighten');
+            // Defender bonus next turn
+        }
+
+        function executeAIMove() {
+            if (gameState !== GAME_STATES.MATCH) return;
+
+            const moves = getAvailableMoves();
+            const validMoves = moves.filter(m => m.action && matchState.p2.stamina >= m.cost);
+
+            if (validMoves.length === 0) return;
+
+            const aiMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+
+            matchState.p2.stamina -= aiMove.cost;
+
+            // Swap roles for AI move
+            [topPlayer, bottomPlayer] = [bottomPlayer, topPlayer];
+
+            switch (aiMove.action) {
+                case 'advance':
+                    handleAdvance();
+                    break;
+                case 'escape':
+                    handleEscape();
+                    break;
+                case 'submit':
+                    handleSubmit();
+                    break;
+            }
+
+            [topPlayer, bottomPlayer] = [bottomPlayer, topPlayer];
+
+            // Check win condition
+            if (matchState.p1.health <= 0 || matchState.p2.health <= 0) {
+                gameState = GAME_STATES.RESULT;
+                AudioManager.play('tapOut');
+            }
+        }
+
+        function transitionPosition(newPos, moveText) {
+            currentPosition = newPos;
+            AudioManager.playTransition();
+        }
+
+        function updateSubmissionMinigame() {
+            if (matchState.submissionMode === 'defending') {
+                matchState.submissionProgress += 2;
+            } else {
+                matchState.submissionProgress -= 2;
+            }
+
+            if (matchState.submissionProgress >= matchState.submissionMaxProgress) {
+                // Submission complete
+                if (matchState.submissionMode === 'submitting') {
+                    matchState.p2.health -= 30;
+                } else {
+                    matchState.p1.health -= 30;
+                }
+                gameState = GAME_STATES.MATCH;
+                matchState.submissionMode = null;
+
+                if (matchState.p1.health <= 0 || matchState.p2.health <= 0) {
+                    gameState = GAME_STATES.RESULT;
+                }
+            }
+
+            if (matchState.submissionProgress <= 0) {
+                // Escaped
+                if (matchState.submissionMode === 'defending') {
+                    matchState.submissionProgress = 0;
+                    gameState = GAME_STATES.MATCH;
+                    matchState.submissionMode = null;
+                    AudioManager.play('crowdCheer');
+                } else {
+                    matchState.submissionProgress = 0;
+                    gameState = GAME_STATES.MATCH;
+                    matchState.submissionMode = null;
+                }
+            }
+        }
+
+        // ============================================================
+        // INPUT HANDLING
+        // ============================================================
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+
+            // Handle game logic
+            switch (gameState) {
+                case GAME_STATES.TITLE_SCREEN:
+                    if (e.key === 'z' || e.key === 'Z') {
+                        gameState = GAME_STATES.CHARACTER_SELECT;
+                        menuSelection = 0;
+                        AudioManager.play('uiSelect');
+                    }
+                    break;
+
+                case GAME_STATES.CHARACTER_SELECT:
+                    if (e.key === 'ArrowLeft') {
+                        menuSelection = 0;
+                        AudioManager.play('uiNavigate');
+                    } else if (e.key === 'ArrowRight') {
+                        menuSelection = 1;
+                        AudioManager.play('uiNavigate');
+                    } else if (e.key === 'z' || e.key === 'Z') {
+                        selectedCharacter = menuSelection === 0 ? 'marcus' : 'yuki';
+                        opponentCharacter = selectedCharacter === 'marcus' ? 'yuki' : 'marcus';
+                        initMatch();
+                        gameState = GAME_STATES.MATCH;
+                        AudioManager.play('uiSelect');
+                    }
+                    break;
+
+                case GAME_STATES.MATCH:
+                    if (e.key === 'a' || e.key === 'A') {
+                        executeMove(0);
+                    } else if (e.key === 's' || e.key === 'S') {
+                        executeMove(1);
+                    } else if (e.key === 'd' || e.key === 'D') {
+                        executeMove(2);
+                    } else if (e.key === 'f' || e.key === 'F') {
+                        executeMove(3);
+                    }
+                    break;
+
+                case GAME_STATES.MATCH_SUBMITTING:
+                case GAME_STATES.MATCH_DEFENDING:
+                    if (e.key === 'z' || e.key === 'Z') {
+                        updateSubmissionMinigame();
+                        AudioManager.play('minigameTick');
+                    } else if (e.key === 'x' || e.key === 'X') {
+                        gameState = GAME_STATES.MATCH;
+                        matchState.submissionMode = null;
+                        AudioManager.play('uiCancel');
+                    }
+                    break;
+
+                case GAME_STATES.RESULT:
+                    if (e.key === 'z' || e.key === 'Z') {
+                        gameState = GAME_STATES.TITLE_SCREEN;
+                        menuSelection = 0;
+                        AudioManager.play('uiSelect');
+                    }
+                    break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // ============================================================
+        // GAME INITIALIZATION
+        // ============================================================
+
+        function initMatch() {
+            currentPosition = 'standing_clinch';
+            topPlayer = selectedCharacter;
+            bottomPlayer = opponentCharacter;
+            matchState = {
+                p1: { ...fighters[selectedCharacter] },
+                p2: { ...fighters[opponentCharacter] },
+                turn: 0,
+                submissionMode: null,
+                submissionProgress: 0,
+                submissionMaxProgress: 100
+            };
+            menuSelection = 0;
+            AudioManager.playMusic('fightTheme', 1000);
+        }
+
+        // ============================================================
+        // MAIN GAME LOOP
+        // ============================================================
+
+        function gameLoop() {
+            applyScreenShake();
+
+            switch (gameState) {
+                case GAME_STATES.TITLE_SCREEN:
+                    drawTitleScreen();
+                    AudioManager.playMusic('menuTheme', 500);
+                    break;
+
+                case GAME_STATES.CHARACTER_SELECT:
+                    drawCharacterSelect();
+                    AudioManager.playMusic('charSelect', 500);
+                    break;
+
+                case GAME_STATES.MATCH:
+                    drawMatch();
+                    break;
+
+                case GAME_STATES.MATCH_SUBMITTING:
+                case GAME_STATES.MATCH_DEFENDING:
+                    drawSubmissionMinigame();
+                    break;
+
+                case GAME_STATES.RESULT:
+                    drawResultScreen();
+                    AudioManager.playMusic('victoryFanfare', 500);
+                    break;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ============================================================
+        // STARTUP
+        // ============================================================
+
+        async function startup() {
+            console.log('LOCKDOWN BJJ - Initializing...');
+
+            // Load all sprites
+            await loadSprites();
+
+            // Initialize audio
+            AudioManager.init();
+
+            console.log('Game ready. Starting main loop...');
+            gameLoop();
+        }
+
+        // Start the game
+        startup().catch(err => {
+            console.error('Startup error:', err);
+        });
+    </script>
+</body>
+</html>

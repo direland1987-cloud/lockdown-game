@@ -1,0 +1,88 @@
+{
+  "generated": "2026-02-28T05:54:15.797Z",
+  "groundScenes": [
+    {
+      "key": "grapple_guard_marcus_top",
+      "position": "guard",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "966x773",
+      "sizeKB": 37
+    },
+    {
+      "key": "grapple_open_guard_marcus_top",
+      "position": "open_guard",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "1024x658",
+      "sizeKB": 32
+    },
+    {
+      "key": "grapple_half_guard_marcus_top",
+      "position": "half_guard",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "1014x522",
+      "sizeKB": 32
+    },
+    {
+      "key": "grapple_side_control_marcus_top",
+      "position": "side_control",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "974x1099",
+      "sizeKB": 35
+    },
+    {
+      "key": "grapple_mount_marcus_top",
+      "position": "mount",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "975x874",
+      "sizeKB": 31
+    },
+    {
+      "key": "grapple_back_control_marcus_top",
+      "position": "back_control",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "1024x620",
+      "sizeKB": 37
+    },
+    {
+      "key": "grapple_turtle_marcus_top",
+      "position": "turtle",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "1024x658",
+      "sizeKB": 36
+    },
+    {
+      "key": "grapple_clinch_marcus_top",
+      "position": "clinch",
+      "topChar": "marcus",
+      "btmChar": "yuki",
+      "dimensions": "1001x984",
+      "sizeKB": 29
+    }
+  ],
+  "standingSprites": [],
+  "summary": {
+    "totalGroundScenes": 8,
+    "totalStandingSprites": 0,
+    "positions": [
+      "guard",
+      "open_guard",
+      "half_guard",
+      "side_control",
+      "mount",
+      "back_control",
+      "turtle",
+      "clinch"
+    ],
+    "characters": [
+      "marcus",
+      "yuki"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude --version:*)",
+      "Bash(npm install:*)",
+      "Bash(curl -fsSL https://claude.ai/install.sh)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
