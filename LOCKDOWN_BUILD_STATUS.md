@@ -245,7 +245,7 @@ When Marcus fights Adele, the game shows the hand-drawn CPS2 pixel art instead o
 - **Submission artwork:** Marcus/Adele sub attack/defend embedded, SubmissionDisplay component built with placeholder technique shots
 - **Turtle position art:** Embedded but Turtle position removed from game code
 - **Goon sprites:** Procedural canvas-drawn (colored silhouettes) — need real artwork
-- **Side-scroller art:** CSS gradient backgrounds, colored rectangle obstacles — need real artwork
+- **Side-scroller art:** CSS gradient backgrounds, enhanced obstacle shapes (mat stacks, gi, ball, roller, dummy, rival, professor) — character uses palette colors. Still canvas-drawn, could use real artwork
 - **Mini-game art:** Colored shapes with emoji labels — need real artwork
 
 ## Artwork Inventory
@@ -396,3 +396,11 @@ Open `lockdown-deploy/index.html` directly in a browser. Audio may not work due 
 24. **Breathing animation enhanced** — Increased breatheA amplitude from 2px translateY to 3px translateY + subtle 1% scale pulse. Now visibly perceptible as chest breathing.
 25. **Blink animation fixed** — Moved blink from outer Fighter div (was affecting glow/shadows causing "screen pulsing") to inner img element. Changed from opacity-based (0.15) to brightness-based filter (0.4) for natural dimming without glow artifacts. Longer visible blink window.
 26. **Arena backgrounds brightened** — All 5 arena base gradients increased ~50% in RGB values. Overlay effects boosted from 0.03-0.08 opacity to 0.10-0.25. Animated layer CSS classes boosted (dojo glow, neon flicker, cage sheen, sunset rays, jungle fireflies now visible). Arenas are now clearly distinguishable.
+27. **Campaign fight stale closure fix** — `finishFight` had `[checkEggs]` deps only; added `gameMode` to deps so campaign fights route to `campaign_result` instead of arcade `result`.
+28. **Default loadouts applied** — `getMoves()` now falls back to `DEFAULT_LOADOUTS[charId]` when localStorage loadouts are empty, ensuring only 4 moves shown per position (Pokemon-style).
+29. **Side-scroller punch collision fix** — Punch obstacles (`o.action==="punch"`) were exempted from damage when `o.hp` was truthy (always). Changed to `g.punching` so only actively punching exempts damage — blocks now hurt the player on collision.
+30. **Side-scroller playerY init fix** — Initial `g.playerY=groundY-20` (unscaled) didn't match jump landing `groundY-24*S` (scaled). Changed init to `groundY-24*S` for consistency.
+31. **Character-specific side-scroller player** — Replaced generic green rectangle with character-aware rendering using palette colors (skin, hair, shorts, belt). Head drawn as circle with hair, body with gi/shorts, arms, running legs. Added `playerChar` prop to SideScroller.
+32. **Enhanced obstacle visuals** — Replaced rectangle obstacles with recognizable shapes: mat stacks (3-color layers), hanging gi (white body + collar V + belt), ball (circle with highlight), foam roller (ellipse with texture lines), training dummy (humanoid with target circle), rival fighter (person in gi), professor (white gi + black belt + coral badge + hat).
+33. **Damage feedback** — Red screen flash on hit (fading over 12 frames), player blink during damage frames (every 4th frame invisible), heart shake animation in HUD during damage.
+34. **Campaign map redesign** — Replaced grid-of-cards layout with vertical path/journey map. Vertical gradient line connecting acts, circle nodes for fights (green check done, pulsing yellow current, gray locked), act milestone badges with belt color circles, compact inline fight button.

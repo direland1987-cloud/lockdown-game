@@ -4,6 +4,21 @@
 
 ---
 
+## CAMPAIGN & SIDE-SCROLLER FIX (v3.1) — COMPLETE
+
+- [x] Fix campaign stale closure — finishFight now includes gameMode in deps, routes to campaign_result correctly
+- [x] Fix default loadouts — getMoves() falls back to DEFAULT_LOADOUTS when localStorage empty, limits to 4 moves
+- [x] Fix side-scroller punch collision — obstacles damage player on contact (was never damaging due to o.hp check)
+- [x] Fix side-scroller playerY init — consistent scaled position matching jump landing
+- [x] Character-specific side-scroller player — palette-colored character with head, body, arms, running legs
+- [x] Enhanced obstacle visuals — mat stacks, hanging gi, ball, foam roller, training dummy, rival fighter, professor
+- [x] Damage feedback — red screen flash, player blink, heart shake animation
+- [x] Campaign map redesign — vertical path with circle nodes, act badges, compact fight buttons
+- [x] New tests: campaign-flow.spec.ts (4 tests across 3 viewports)
+- [x] Update living documents
+
+---
+
 ## ENDGAME BUILD (v3.0) — COMPLETE
 
 - [x] Add 3 new characters (Rusty Jones, Luta Duarte, Mahmedov) with stats, POS_AFFINITY, DEFAULT_LOADOUTS
