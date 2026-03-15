@@ -30,6 +30,12 @@ export default defineConfig({
         isMobile: true,
       },
     },
+    {
+      name: 'iphone',
+      use: {
+        ...devices['iPhone 13'],
+      },
+    },
   ],
   webServer: {
     command: 'npx serve . -l 8080 -s --no-clipboard',
